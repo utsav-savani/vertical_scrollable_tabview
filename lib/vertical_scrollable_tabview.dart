@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:rect_getter/rect_getter.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
@@ -67,11 +68,8 @@ class VerticalScrollableTabView extends StatefulWidget {
   final String? _restorationId;
   final Clip _clipBehavior;
 
-  final bool scrollOnUserInteraction;
-
   const VerticalScrollableTabView({
     Key? key,
-    this.scrollOnUserInteraction = true,
 
     /// Custom parameters
     required AutoScrollController autoScrollController,
@@ -108,37 +106,37 @@ class VerticalScrollableTabView extends StatefulWidget {
     Clip clipBehavior = Clip.hardEdge,
     required this.tabCount,
     this.infiniteScroll = true,
-  })  : _tabController = tabController,
-        _itemBuilder = itemBuilder,
-        _verticalScrollPosition = verticalScrollPosition,
-        _autoScrollController = autoScrollController,
+  }) : _tabController = tabController,
+       _itemBuilder = itemBuilder,
+       _verticalScrollPosition = verticalScrollPosition,
+       _autoScrollController = autoScrollController,
 
-        /// Scrollbar
-        _thumbVisibility = scrollbarThumbVisibility,
-        _trackVisibility = scrollbarTrackVisibility,
-        _thickness = scrollbarThickness,
-        _radius = scrollbarRadius,
-        _notificationPredicate = scrollbarNotificationPredicate,
-        _interactive = scrollInteractive,
-        _scrollbarOrientation = scrollbarOrientation,
+       /// Scrollbar
+       _thumbVisibility = scrollbarThumbVisibility,
+       _trackVisibility = scrollbarTrackVisibility,
+       _thickness = scrollbarThickness,
+       _radius = scrollbarRadius,
+       _notificationPredicate = scrollbarNotificationPredicate,
+       _interactive = scrollInteractive,
+       _scrollbarOrientation = scrollbarOrientation,
 
-        /// CustomScrollView
-        _scrollDirection = scrollDirection,
-        _reverse = reverse,
-        _primary = primary,
-        _physics = physics,
-        _scrollBehavior = scrollBehavior,
-        _shrinkWrap = shrinkWrap,
-        _center = center,
-        _anchor = anchor,
-        _cacheExtent = cacheExtent,
-        _slivers = slivers,
-        _semanticChildCount = semanticChildCount,
-        _dragStartBehavior = dragStartBehavior,
-        _keyboardDismissBehavior = keyboardDismissBehavior,
-        _restorationId = restorationId,
-        _clipBehavior = clipBehavior,
-        super(key: key);
+       /// CustomScrollView
+       _scrollDirection = scrollDirection,
+       _reverse = reverse,
+       _primary = primary,
+       _physics = physics,
+       _scrollBehavior = scrollBehavior,
+       _shrinkWrap = shrinkWrap,
+       _center = center,
+       _anchor = anchor,
+       _cacheExtent = cacheExtent,
+       _slivers = slivers,
+       _semanticChildCount = semanticChildCount,
+       _dragStartBehavior = dragStartBehavior,
+       _keyboardDismissBehavior = keyboardDismissBehavior,
+       _restorationId = restorationId,
+       _clipBehavior = clipBehavior,
+       super(key: key);
 
   @override
   State<VerticalScrollableTabView> createState() =>
@@ -173,9 +171,7 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
       key: listViewKey,
       // NotificationListener 是一個由下往上傳遞通知，true 阻止通知、false 傳遞通知，確保指監聽滾動的通知
       // ScrollNotification => https://www.jianshu.com/p/d80545454944
-      child: (widget.scrollOnUserInteraction
-          ? NotificationListener<UserScrollNotification>.new
-          : NotificationListener<ScrollNotification>.new)(
+      child: NotificationListener<ScrollNotification>(
         onNotification: onScrollNotification,
         child: Scrollbar(
           controller: widget._autoScrollController,
@@ -211,14 +207,11 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
 
   SliverList buildVerticalSliverList() {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          // 建立 itemKeys 的 Key
-          itemsKeys.putIfAbsent(index, () => RectGetter.createGlobalKey());
-          return buildItem(context, index);
-        },
-        childCount: widget.infiniteScroll ? null : widget.tabCount,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        // 建立 itemKeys 的 Key
+        itemsKeys.putIfAbsent(index, () => RectGetter.createGlobalKey());
+        return buildItem(context, index);
+      }, childCount: widget.infiniteScroll ? null : widget.tabCount),
     );
   }
 
@@ -244,16 +237,22 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
     widget._tabController.animateTo(index % widget.tabCount);
     switch (widget._verticalScrollPosition) {
       case VerticalScrollPosition.begin:
-        widget._autoScrollController
-            .scrollToIndex(index, preferPosition: AutoScrollPosition.begin);
+        widget._autoScrollController.scrollToIndex(
+          index,
+          preferPosition: AutoScrollPosition.begin,
+        );
         break;
       case VerticalScrollPosition.middle:
-        widget._autoScrollController
-            .scrollToIndex(index, preferPosition: AutoScrollPosition.middle);
+        widget._autoScrollController.scrollToIndex(
+          index,
+          preferPosition: AutoScrollPosition.middle,
+        );
         break;
       case VerticalScrollPosition.end:
-        widget._autoScrollController
-            .scrollToIndex(index, preferPosition: AutoScrollPosition.end);
+        widget._autoScrollController.scrollToIndex(
+          index,
+          preferPosition: AutoScrollPosition.end,
+        );
         break;
     }
   }
@@ -261,11 +260,24 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
   /// onScrollNotification of NotificationListener
   /// true表示消費掉當前通知不再向上一级NotificationListener傳遞通知，false則會再向上一级NotificationListener傳遞通知；
   bool onScrollNotification(ScrollNotification notification) {
+    widget._autoScrollController.isAutoScrolling;
+
     List<int> visibleItems = getVisibleItemsIndex();
     if (visibleItems.isEmpty) return false;
-    widget._tabController.animateTo(visibleItems[0] % widget.tabCount);
+    if (notification is UserScrollNotification) {
+      isUserScrolling = notification.direction != ScrollDirection.idle;
+    }
+    print('isUserScrolling: $isUserScrolling');
+
+    if (isUserScrolling) {
+      widget._tabController.animateTo(visibleItems[0] % widget.tabCount);
+      return true;
+    }
+
     return false;
   }
+
+  bool isUserScrolling = false;
 
   /// getVisibleItemsIndex on Screen
   /// 取得現在畫面上可以看得到的 Items Index
@@ -296,7 +308,8 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
               rect.top +
                   MediaQuery.of(context).viewPadding.top +
                   kToolbarHeight +
-                  56) return;
+                  56)
+            return;
           break;
       }
 
