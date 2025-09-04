@@ -267,7 +267,6 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
     if (notification is UserScrollNotification) {
       isUserScrolling = notification.direction != ScrollDirection.idle;
     }
-    print('isUserScrolling: $isUserScrolling');
 
     if (isUserScrolling) {
       widget._tabController.animateTo(visibleItems[0] % widget.tabCount);
