@@ -43,6 +43,23 @@ class VerticalScrollableTabView extends StatefulWidget {
   final int tabCount;
   final bool infiniteScroll;
 
+  /// Optional pinned header height for accurate tab selection during scrolling.
+  ///
+  /// When using conditional banners, dynamic headers, or custom app bars above the tabs,
+  /// the widget may incorrectly calculate which tab is visible during scrolling.
+  /// Set this to the exact height of your pinned header to fix tab selection.
+  ///
+  /// If null, defaults to: `MediaQuery.viewPadding.top + kToolbarHeight + 56`
+  ///
+  /// Example:
+  /// ```dart
+  /// VerticalScrollableTabView(
+  ///   pinnedHeaderHeight: 200.0, // Custom header height
+  ///   // ... other parameters
+  /// )
+  /// ```
+  final double? pinnedHeaderHeight;
+
   /// Copy Scrollbar
   final bool? _thumbVisibility;
   final bool? _trackVisibility;
@@ -106,6 +123,7 @@ class VerticalScrollableTabView extends StatefulWidget {
     Clip clipBehavior = Clip.hardEdge,
     required this.tabCount,
     this.infiniteScroll = true,
+    this.pinnedHeaderHeight,
   }) : _tabController = tabController,
        _itemBuilder = itemBuilder,
        _verticalScrollPosition = verticalScrollPosition,
@@ -287,6 +305,11 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
     if (rect == null) return items;
 
     bool isHorizontalScroll = widget._scrollDirection == Axis.horizontal;
+
+    // Calculate header offset once before the loop for better performance
+    final headerOffset = widget.pinnedHeaderHeight ??
+        (MediaQuery.of(context).viewPadding.top + kToolbarHeight + 56);
+
     itemsKeys.forEach((index, key) {
       Rect? itemRect = RectGetter.getRectFromKey(key);
       if (itemRect == null) return;
@@ -303,12 +326,7 @@ class _VerticalScrollableTabViewState extends State<VerticalScrollableTabView>
         case false:
           if (itemRect.top > rect.bottom) return;
           // 如果 item 下方的座標 比 listView 的上方的座標 的位置的小 代表不在畫面中。
-          if (itemRect.bottom <
-              rect.top +
-                  MediaQuery.of(context).viewPadding.top +
-                  kToolbarHeight +
-                  56)
-            return;
+          if (itemRect.bottom < rect.top + headerOffset) return;
           break;
       }
 
