@@ -1,3 +1,9 @@
+## 0.1.1
+
+* Add `pinnedHeaderHeight` parameter to fix incorrect tab selection with dynamic headers
+* Improve performance by calculating header offset once per scroll calculation
+* Add comprehensive documentation and usage examples
+
 ## 0.1.0
 
 * update dart sdk: '>=3.0.3 <4.0.0' and flutter: ">=3.3.0"
