@@ -1,6 +1,5 @@
 # Miscellaneous
 *.class
-*.lock
 *.log
 *.pyc
 *.swp
@@ -9,6 +8,11 @@
 .buildlog/
 .history
 .svn/
+
+# Note: pubspec.lock should be committed for packages/libraries
+# Only ignore other .lock files
+*.lock
+!pubspec.lock
 
 # IntelliJ related
 *.iml
